@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  proxy-manager:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PM_ENV=production
+      - PM_REDIS_URL=redis://redis:6379/0
+      - PM_DATABASE_URL=sqlite:///data/proxies.db
+      - PM_LOG_LEVEL=INFO
+      - PM_HEALTH_CHECK_INTERVAL=60
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - pm-data:/app/data
+    restart: unless-stopped
+    networks:
+      - pm-net
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pm-net
+
+  dashboard:
+    build: .
+    command: ["python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8081"]
+    ports:
+      - "8081:8081"
+    environment:
+      - PM_REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - proxy-manager
+    networks:
+      - pm-net
+
+volumes:
+  pm-data:
+  redis-data:
+
+networks:
+  pm-net:
+    driver: bridge
