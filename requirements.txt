@@ -1,0 +1,7 @@
+aiohttp==3.9.3
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pytest==7.4.4
+pytest-asyncio==0.23.3
+aiohttp-socks==0.8.4
